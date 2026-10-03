@@ -3,7 +3,8 @@ import { createNoise3D, fbm, mulberry32 } from './noise.js';
 import { themes, wildTheme, water } from './themes.js';
 
 const DETAIL = 56; // icosphere subdivision: higher = smaller facets
-const BEACH = 0.0095; // heights below this (but above sea) are sand
+const PATCH_RES = 200; // grid cells across a ground-level island patch
+export const BEACH = 0.0095; // heights below this (but above sea) are sand
 
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
 const smoothstep = (a, b, v) => {
@@ -51,6 +52,20 @@ export function latLonToDir(lat, lon) {
   ).normalize();
 }
 
+/** Two unit vectors spanning the tangent plane at `dir`. */
+export function tangentBasis(dir) {
+  const ref = Math.abs(dir.y) < 0.9 ? new THREE.Vector3(0, 1, 0) : new THREE.Vector3(1, 0, 0);
+  const t1 = new THREE.Vector3().crossVectors(dir, ref).normalize();
+  const t2 = new THREE.Vector3().crossVectors(dir, t1).normalize();
+  return [t1, t2];
+}
+
+/** Point on the sphere `angle` radians from `center`, heading along `bearing` in its tangent plane. */
+export function offsetDir(center, [t1, t2], bearing, angle) {
+  const tangent = t1.clone().multiplyScalar(Math.cos(bearing)).addScaledVector(t2, Math.sin(bearing));
+  return center.clone().multiplyScalar(Math.cos(angle)).addScaledVector(tangent, Math.sin(angle)).normalize();
+}
+
 function paletteColors(p) {
   return {
     sand: new THREE.Color(p.sand),
@@ -78,6 +93,8 @@ export class Terrain {
     this.wild = { style: 'wild', palette: wildTheme.palette, colors: paletteColors(wildTheme.palette) };
     this.hoverUniform = { value: -1 };
     this.timeUniform = { value: 0 };
+    // xyz: center of the area the globe mesh should hide (a detail patch is drawn there), w: cos(radius)
+    this.capUniform = { value: new THREE.Vector4(0, 1, 0, 2) };
   }
 
   /** Height + owning island for a unit direction. owner = region index, or -1 for wild/ocean. */
@@ -107,30 +124,16 @@ export class Terrain {
     return { h: STYLES[style].height(t, detail, ridge, core), owner, land: true };
   }
 
-  buildMesh() {
-    const geo = new THREE.IcosahedronGeometry(1, DETAIL);
-    const pos = geo.attributes.position;
-    const n = pos.count;
-    const v = new THREE.Vector3();
-    const heights = new Float32Array(n);
-    const cache = new Map();
-
-    for (let i = 0; i < n; i++) {
-      v.fromBufferAttribute(pos, i).normalize();
-      const key = `${Math.round(v.x * 1e5)},${Math.round(v.y * 1e5)},${Math.round(v.z * 1e5)}`;
-      let h = cache.get(key);
-      if (h === undefined) {
-        h = this.sample(v).h;
-        cache.set(key, h);
-      }
-      heights[i] = h;
-      pos.setXYZ(i, v.x * (1 + h), v.y * (1 + h), v.z * (1 + h));
-    }
-
+  /**
+   * Turn a non-indexed triangle soup (positions already displaced, per-vertex heights)
+   * into a colored geometry. Returns the geometry and each face's island index (-1 = none).
+   */
+  _colorize(positions, heights, seed) {
+    const n = heights.length;
     const colors = new Float32Array(n * 3);
     const regionAttr = new Float32Array(n);
     const faceRegion = new Int16Array(n / 3);
-    const rand = mulberry32(99);
+    const rand = mulberry32(seed);
     const a = new THREE.Vector3(), b = new THREE.Vector3(), c = new THREE.Vector3();
     const center = new THREE.Vector3(), normal = new THREE.Vector3(), tmp = new THREE.Vector3();
     const col = new THREE.Color();
@@ -138,9 +141,9 @@ export class Terrain {
 
     for (let f = 0; f < n / 3; f++) {
       const i = f * 3;
-      a.fromBufferAttribute(pos, i);
-      b.fromBufferAttribute(pos, i + 1);
-      c.fromBufferAttribute(pos, i + 2);
+      a.fromArray(positions, i * 3);
+      b.fromArray(positions, i * 3 + 3);
+      c.fromArray(positions, i * 3 + 6);
       center.copy(a).add(b).add(c).normalize();
       normal.subVectors(c, b).cross(tmp.subVectors(a, b)).normalize();
       const slope = Math.abs(normal.dot(center));
@@ -174,29 +177,59 @@ export class Terrain {
       }
     }
 
+    const geo = new THREE.BufferGeometry();
+    geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
     geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
     geo.setAttribute('aRegion', new THREE.BufferAttribute(regionAttr, 1));
     geo.computeVertexNormals();
     geo.computeBoundingSphere();
+    return { geo, faceRegion };
+  }
 
+  buildMesh() {
+    const ico = new THREE.IcosahedronGeometry(1, DETAIL);
+    const positions = ico.attributes.position.array;
+    const n = positions.length / 3;
+    const v = new THREE.Vector3();
+    const heights = new Float32Array(n);
+    const cache = new Map();
+
+    for (let i = 0; i < n; i++) {
+      v.fromArray(positions, i * 3).normalize();
+      const key = `${Math.round(v.x * 1e5)},${Math.round(v.y * 1e5)},${Math.round(v.z * 1e5)}`;
+      let h = cache.get(key);
+      if (h === undefined) {
+        h = this.sample(v).h;
+        cache.set(key, h);
+      }
+      heights[i] = h;
+      v.multiplyScalar(1 + h).toArray(positions, i * 3);
+    }
+
+    const { geo, faceRegion } = this._colorize(positions, heights, 99);
     const material = new THREE.MeshStandardMaterial({
       vertexColors: true,
       flatShading: true,
       roughness: 0.92,
       metalness: 0,
     });
-    // Brighten the hovered island with a gentle pulse.
+    // Brighten the hovered island with a gentle pulse, and cut a hole where a detail patch is shown.
     material.onBeforeCompile = (shader) => {
       shader.uniforms.uHover = this.hoverUniform;
       shader.uniforms.uTime = this.timeUniform;
+      shader.uniforms.uCap = this.capUniform;
       shader.vertexShader = shader.vertexShader
-        .replace('#include <common>', '#include <common>\nattribute float aRegion;\nvarying float vRegion;')
-        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRegion = aRegion;');
+        .replace('#include <common>', '#include <common>\nattribute float aRegion;\nvarying float vRegion;\nvarying vec3 vDir;')
+        .replace('#include <begin_vertex>', '#include <begin_vertex>\nvRegion = aRegion;\nvDir = position;');
       shader.fragmentShader = shader.fragmentShader
-        .replace('#include <common>', '#include <common>\nuniform float uHover;\nuniform float uTime;\nvarying float vRegion;')
+        .replace(
+          '#include <common>',
+          '#include <common>\nuniform float uHover;\nuniform float uTime;\nuniform vec4 uCap;\nvarying float vRegion;\nvarying vec3 vDir;',
+        )
         .replace(
           '#include <color_fragment>',
           `#include <color_fragment>
+          if (dot(normalize(vDir), uCap.xyz) > uCap.w) discard;
           if (uHover > -0.5 && abs(vRegion - uHover) < 0.5) {
             diffuseColor.rgb = mix(diffuseColor.rgb, vec3(1.0, 0.97, 0.9), 0.16 + 0.07 * sin(uTime * 4.0));
           }`,
@@ -205,6 +238,82 @@ export class Terrain {
 
     const mesh = new THREE.Mesh(geo, material);
     return { mesh, faceRegion };
+  }
+
+  /** Radius (radians) of the high-detail patch for an island, and of the hole cut in the globe. */
+  patchRadius(region) {
+    return region.size * 1.5;
+  }
+
+  /** Hide the globe mesh where `region`'s detail patch is drawn (null to show everything). */
+  setCap(region) {
+    if (!region) {
+      this.capUniform.value.set(0, 1, 0, 2);
+      return;
+    }
+    const c = region.center;
+    this.capUniform.value.set(c.x, c.y, c.z, Math.cos(this.patchRadius(region) * 0.97));
+  }
+
+  /** A finely tessellated round patch of terrain around an island, for ground-level views. */
+  buildPatch(region) {
+    const R = this.patchRadius(region);
+    const N = PATCH_RES;
+    const basis = tangentBasis(region.center);
+    const [t1, t2] = basis;
+    const c = region.center;
+
+    // grid of directions via the exponential map around the island center
+    const gridDir = new Float32Array((N + 1) * (N + 1) * 3);
+    const gridH = new Float32Array((N + 1) * (N + 1));
+    const inside = new Uint8Array((N + 1) * (N + 1));
+    const v = new THREE.Vector3();
+    for (let j = 0; j <= N; j++) {
+      for (let i = 0; i <= N; i++) {
+        const k = j * (N + 1) + i;
+        const u = (i / N) * 2 - 1, w = (j / N) * 2 - 1;
+        const r = Math.hypot(u, w) * R;
+        if (r > R * 1.03) continue;
+        inside[k] = 1;
+        if (r < 1e-9) v.copy(c);
+        else {
+          const s = Math.sin(r) / (r / R);
+          v.copy(c).multiplyScalar(Math.cos(r)).addScaledVector(t1, u * s).addScaledVector(t2, w * s).normalize();
+        }
+        gridH[k] = this.sample(v).h;
+        v.toArray(gridDir, k * 3);
+      }
+    }
+
+    const positions = [];
+    const heights = [];
+    const push = (k) => {
+      const h = gridH[k];
+      positions.push(gridDir[k * 3] * (1 + h), gridDir[k * 3 + 1] * (1 + h), gridDir[k * 3 + 2] * (1 + h));
+      heights.push(h);
+    };
+    for (let j = 0; j < N; j++) {
+      for (let i = 0; i < N; i++) {
+        const a = j * (N + 1) + i, b = a + 1, d = a + N + 1, e = d + 1;
+        if (!(inside[a] && inside[b] && inside[d] && inside[e])) continue;
+        // alternate the diagonal so facets read as triangles, not a square grid
+        if ((i + j) % 2) {
+          push(a); push(d); push(b);
+          push(b); push(d); push(e);
+        } else {
+          push(a); push(d); push(e);
+          push(a); push(e); push(b);
+        }
+      }
+    }
+
+    const { geo } = this._colorize(new Float32Array(positions), new Float32Array(heights), 1234 + region.index);
+    const mesh = new THREE.Mesh(
+      geo,
+      new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.92, metalness: 0 }),
+    );
+    mesh.visible = false;
+    return mesh;
   }
 
   buildOcean() {

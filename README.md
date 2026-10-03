@@ -22,7 +22,22 @@ Everything lives in **`src/content.js`**:
   - `size`: island radius in radians (~0.35–0.6)
   - `theme`: `'village'`, `'music'`, `'code'`, or `'summit'`
 
-Each section's `id` doubles as a shareable URL: `…/#music` opens straight to that island.
+Each section's `id` doubles as a shareable URL: `…/#music` lands straight on that island.
+
+## Exploring an island
+
+Clicking an island flies you down to ground level. A trail of stepping stones runs from a welcome arch on the beach, past one stop per entry in `items`, up to the island's landmark. Each stop has an exhibit (signpost, piano-key monolith, terminal, cairn), and its text unfolds in a card beside it.
+
+- Walk with the **‹ ›** buttons, the arrow keys / A·D, or by clicking a stop or its floating label
+- Drag to look around
+- **Read as list** opens the whole section as a plain panel, for skimming
+- The trail is planned automatically from the number of items, so adding an item adds a stop
+
+| File | What it controls |
+| --- | --- |
+| `src/trails.js` | Where stops and the path go |
+| `src/explore.js` | Walking, the camera, the descent from orbit, the ground-level sky and haze |
+| `src/props.js` | Exhibit models (`EXHIBITS`) and trail visuals |
 
 ## Changing the look
 

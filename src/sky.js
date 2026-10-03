@@ -46,7 +46,7 @@ function stars(rand) {
   geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
   return new THREE.Points(
     geo,
-    new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false }),
+    new THREE.PointsMaterial({ size: 2.2, sizeAttenuation: false, vertexColors: true, transparent: true, depthWrite: false, fog: false }),
   );
 }
 
@@ -68,10 +68,10 @@ function moon() {
   const g = new THREE.Group();
   const body = new THREE.Mesh(
     new THREE.IcosahedronGeometry(0.09, 1),
-    new THREE.MeshStandardMaterial({ color: '#efe6ff', flatShading: true, roughness: 1 }),
+    new THREE.MeshStandardMaterial({ color: '#efe6ff', flatShading: true, roughness: 1, fog: false }),
   );
   g.add(body);
-  const crater = new THREE.MeshStandardMaterial({ color: '#b9a8e0', flatShading: true, roughness: 1 });
+  const crater = new THREE.MeshStandardMaterial({ color: '#b9a8e0', flatShading: true, roughness: 1, fog: false });
   [[0.06, 0.05, 0.05, 0.025], [-0.07, 0.02, 0.05, 0.02], [0.0, -0.06, 0.07, 0.018]].forEach(([x, y, z, r]) => {
     const c = new THREE.Mesh(new THREE.IcosahedronGeometry(r, 0), crater);
     c.position.set(x, y, z);
@@ -84,11 +84,11 @@ function ringedPlanet() {
   const g = new THREE.Group();
   g.add(new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.1, 1),
-    new THREE.MeshStandardMaterial({ color: '#ff8a5c', flatShading: true, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: '#ff8a5c', flatShading: true, roughness: 0.9, fog: false }),
   ));
   const ring = new THREE.Mesh(
     new THREE.RingGeometry(1.5, 2.3, 7, 1),
-    new THREE.MeshStandardMaterial({ color: '#ffd29a', flatShading: true, side: THREE.DoubleSide, roughness: 0.9 }),
+    new THREE.MeshStandardMaterial({ color: '#ffd29a', flatShading: true, side: THREE.DoubleSide, roughness: 0.9, fog: false }),
   );
   ring.rotation.x = Math.PI / 2.4;
   g.add(ring);
@@ -99,7 +99,8 @@ export function buildSky(scene) {
   const rand = mulberry32(2024);
 
   scene.add(stars(rand));
-  scene.add(atmosphere());
+  const atmo = atmosphere();
+  scene.add(atmo);
 
   const cloudMat = new THREE.MeshStandardMaterial({ color: '#ffffff', flatShading: true, roughness: 1, transparent: true, opacity: 0.92 });
   const pivots = [];
@@ -126,6 +127,10 @@ export function buildSky(scene) {
   scene.add(planet);
 
   return {
+    /** 0 = orbit view, 1 = standing on the ground (the glow shell would surround the camera). */
+    setGroundLevel(k) {
+      atmo.visible = k < 0.5;
+    },
     update(t, dt) {
       for (const p of pivots) p.rotateX(p.userData.speed * dt);
       moonPivot.rotation.y = t * 0.06;

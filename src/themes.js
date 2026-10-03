@@ -3,7 +3,8 @@
 //   style   – terrain shape: 'hills' | 'terraces' | 'mesas' | 'peaks'
 //   kit     – which props/landmark get built (see props.js)
 //   palette – sand: beaches, bands: low → high elevation, cliff: steep faces,
-//             foliage: tree colors, accent: beacon / UI highlight
+//             foliage: tree colors, accent: beacon / UI highlight,
+//             path: trail stones, sky: ground-level sky gradient
 
 export const themes = {
   village: {
@@ -15,6 +16,8 @@ export const themes = {
       cliff: '#b9805a',
       foliage: ['#3fa34d', '#2d8a5f', '#7fcf4f', '#f29e4c', '#e8574a'],
       accent: '#ffb347',
+      path: '#ecd9b0',
+      sky: { zenith: '#5b8cff', horizon: '#ffd9a8' },
     },
   },
   music: {
@@ -27,6 +30,8 @@ export const themes = {
       cliff: '#6b3fa0',
       foliage: ['#ff6fae', '#b15cff', '#ffd1e8', '#ff8f6b'],
       accent: '#ff5fa2',
+      path: '#fff4fa',
+      sky: { zenith: '#6a4bc4', horizon: '#ffc2dd' },
     },
   },
   code: {
@@ -38,6 +43,8 @@ export const themes = {
       cliff: '#22407e',
       foliage: ['#3be8b0', '#1fb5a8', '#7cf7ff'],
       accent: '#22e4ff',
+      path: '#c4fbff',
+      sky: { zenith: '#1d3375', horizon: '#8af2e6' },
     },
   },
   summit: {
@@ -49,6 +56,8 @@ export const themes = {
       cliff: '#7a3f30',
       foliage: ['#e05d3a', '#f2a541', '#2f7d5b', '#3c9a6b'],
       accent: '#ffd23f',
+      path: '#ead7b5',
+      sky: { zenith: '#3d5bd9', horizon: '#ffe3a3' },
     },
   },
 };

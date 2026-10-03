@@ -51,7 +51,7 @@ body::after {
   inset: 0;
   pointer-events: none;
 }
-#ui > :not(.labels):not(.hint) { pointer-events: auto; }
+#ui > :not(.labels):not(.hint):not(.hud) { pointer-events: auto; }
 
 button { font: inherit; }
 
@@ -342,8 +342,267 @@ body.panel-open .hint { opacity: 0; }
 .item .links { margin-top: 10px; }
 .item .links a:hover { background: var(--ink); color: var(--paper); opacity: 1; }
 
+/* ── explore mode (on an island) ───────── */
+.brand,
+.chips,
+.labels { transition: opacity 0.4s; }
+body.exploring .brand,
+body.exploring .chips,
+body.exploring .labels,
+body.exploring .hint { opacity: 0; pointer-events: none !important; visibility: hidden; }
+
+.hud {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity 0.5s, visibility 0s linear 0.5s;
+}
+body.exploring .hud {
+  opacity: 1;
+  visibility: visible;
+  transition: opacity 0.6s 0.8s, visibility 0s 0.8s;
+}
+.hud button { pointer-events: auto; }
+
+.hud-btn {
+  position: absolute;
+  top: 20px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--paper);
+  color: var(--ink);
+  font: 600 14px var(--font-head);
+  cursor: pointer;
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.hud-btn:hover { transform: translateY(-2px); box-shadow: 0 6px 0 rgba(0, 0, 0, 0.3); }
+.hud-back { left: 20px; }
+.hud-list { right: 20px; }
+
+.hud-hint {
+  position: absolute;
+  left: 50%;
+  bottom: 86px;
+  margin: 0;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font: 500 12px var(--font-head);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--ink);
+  background: rgba(255, 250, 242, 0.75);
+  padding: 6px 12px;
+  border-radius: 999px;
+  transition: opacity 0.6s;
+}
+.hud-hint kbd {
+  font: inherit;
+  padding: 0 5px;
+  border-radius: 4px;
+  background: var(--ink);
+  color: var(--paper);
+}
+.hud.has-dragged .hud-hint { opacity: 0; }
+
+.hud-nav {
+  position: absolute;
+  left: 50%;
+  bottom: 22px;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px;
+  border-radius: 999px;
+  background: var(--paper);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+}
+.hud-step {
+  width: 40px;
+  height: 40px;
+  border: 0;
+  border-radius: 50%;
+  background: var(--accent);
+  color: var(--ink);
+  font: 700 22px / 1 var(--font-head);
+  cursor: pointer;
+  transition: transform 0.15s, opacity 0.2s;
+}
+.hud-step:hover:not(:disabled) { transform: scale(1.08); }
+.hud-step:disabled { opacity: 0.3; cursor: default; }
+.hud-dots {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0;
+  padding: 0 8px;
+  list-style: none;
+}
+.hud-dot {
+  display: block;
+  width: 12px;
+  height: 12px;
+  padding: 0;
+  border: 2px solid var(--ink);
+  background: transparent;
+  cursor: pointer;
+  transform: rotate(45deg);
+  transition: transform 0.2s, background 0.2s;
+}
+.hud-dot.is-visited { background: color-mix(in srgb, var(--accent) 55%, transparent); }
+.hud-dot.is-current { background: var(--accent); transform: rotate(45deg) scale(1.35); }
+.hud-dot.is-walking { animation: dot-pulse 0.8s ease-in-out infinite alternate; }
+@keyframes dot-pulse { to { transform: rotate(45deg) scale(1.1); opacity: 0.6; } }
+.hud-step:focus-visible,
+.hud-dot:focus-visible,
+.hud-btn:focus-visible,
+.card-action:focus-visible { outline: 3px solid #fff; outline-offset: 3px; }
+
+/* floating labels over the other stops */
+.tags { position: absolute; inset: 0; overflow: hidden; pointer-events: none; }
+.tag {
+  position: absolute;
+  left: 0;
+  top: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 250, 242, 0.92);
+  color: var(--ink);
+  font: 600 12px var(--font-head);
+  white-space: nowrap;
+  cursor: pointer;
+  opacity: 0;
+  box-shadow: 0 3px 0 rgba(0, 0, 0, 0.2);
+  margin-top: -8px;
+}
+.tag::after {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: -6px;
+  width: 10px;
+  height: 7px;
+  transform: translateX(-50%);
+  background: inherit;
+  clip-path: polygon(0 0, 100% 0, 50% 100%);
+}
+.tag-dot {
+  width: 8px;
+  height: 8px;
+  background: var(--accent);
+  transform: rotate(45deg);
+}
+.tag:hover { background: var(--accent); }
+
+/* the card that unfolds next to an exhibit */
+.card-pin {
+  position: absolute;
+  left: -7px;
+  top: -7px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent);
+  border: 2px solid var(--paper);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s;
+  box-shadow: 0 0 0 6px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+.card-pin.open { opacity: 1; }
+
+.card {
+  position: absolute;
+  left: 0;
+  top: 0;
+  width: min(360px, calc(100vw - 48px));
+  max-height: calc(100vh - 220px);
+  display: flex;
+  flex-direction: column;
+  border-radius: 20px;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 18px 50px rgba(0, 0, 0, 0.35);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.35s, visibility 0s linear 0.35s;
+}
+.card.open {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transition: opacity 0.45s 0.1s, visibility 0s;
+}
+.card::before {
+  content: '';
+  flex: none;
+  height: 14px;
+  background-color: var(--accent);
+  background-image:
+    linear-gradient(135deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%),
+    linear-gradient(225deg, rgba(255, 255, 255, 0.3) 25%, transparent 25%);
+  background-size: 14px 14px;
+}
+.card-body {
+  overflow-y: auto;
+  padding: 18px 22px 22px;
+}
+.card .kicker { margin-bottom: 6px; }
+.card h2 {
+  margin: 0 0 10px;
+  font: 700 30px / 1.05 var(--font-head);
+  letter-spacing: -0.02em;
+}
+.card h3 { margin: 0; font: 700 20px var(--font-head); }
+.card p { margin: 10px 0 0; line-height: 1.5; }
+.card .intro { margin: 0; font-size: 15px; }
+.card .links { margin-top: 12px; }
+.card .links a:hover { background: var(--ink); color: var(--paper); opacity: 1; }
+.card-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.card-actions .card-action { margin-top: 0; }
+.card-action {
+  margin-top: 16px;
+  padding: 9px 16px;
+  border: 0;
+  border-radius: 999px;
+  background: var(--accent);
+  color: var(--ink);
+  font: 600 14px var(--font-head);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.card-action:hover { transform: translateX(3px); }
+.card-action.ghost { background: transparent; box-shadow: inset 0 0 0 2px var(--ink); }
+
 /* ── small screens: panel becomes a bottom sheet ── */
 @media (max-width: 760px) {
+  .hud-btn { top: 14px; padding: 8px 13px; font-size: 13px; }
+  .hud-back { left: 14px; }
+  .hud-list { right: 14px; }
+  .hud-hint { display: none; }
+  .hud-nav { bottom: 14px; }
+  .card {
+    left: 10px;
+    right: 10px;
+    top: auto;
+    bottom: 84px;
+    width: auto;
+    max-height: 46vh;
+    transform: none !important;
+  }
+  .card h2 { font-size: 26px; }
   .brand { top: 18px; left: 18px; }
   .brand p { font-size: 13px; margin-bottom: 10px; }
   .chips { bottom: 16px; gap: 8px; }

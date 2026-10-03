@@ -1,5 +1,7 @@
 import * as THREE from 'three';
 import { mulberry32 } from './noise.js';
+import { offsetDir, tangentBasis } from './terrain.js';
+import { nearTrail } from './trails.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const TAU = Math.PI * 2;
@@ -260,20 +262,68 @@ const KITS = {
   },
 };
 
-// ── placement helpers ────────────────────────────────────────
-function tangentBasis(dir) {
-  const ref = Math.abs(dir.y) < 0.9 ? UP : new THREE.Vector3(1, 0, 0);
-  const t1 = new THREE.Vector3().crossVectors(dir, ref).normalize();
-  const t2 = new THREE.Vector3().crossVectors(dir, t1).normalize();
-  return [t1, t2];
+// ── trail exhibits (local +z faces the visitor) ──────────────
+function signpost(rand, pal) {
+  const g = new THREE.Group();
+  g.add(part(G.box, mat('#a0673d'), [0.0022, 0.024, 0.0022], [0, 0.012, 0]));
+  g.add(part(G.box, mat('#f3dcb2'), [0.02, 0.009, 0.0016], [0, 0.02, 0.0016]));
+  g.add(part(G.box, mat(pal.accent), [0.02, 0.0018, 0.0018], [0, 0.0254, 0.0016]));
+  g.add(part(G.box, mat('#c98b4f'), [0.013, 0.005, 0.0014], [0.003, 0.012, -0.0012], [0, 0, -0.12]));
+  return g;
 }
 
+function keyStone(rand, pal) {
+  const g = new THREE.Group();
+  g.add(part(G.box, mat(pal.accent), [0.016, 0.003, 0.009], [0, 0.0015, 0]));
+  g.add(part(G.box, mat('#fffaf2', { rough: 0.5 }), [0.011, 0.028, 0.005], [0, 0.017, 0]));
+  g.add(part(G.box, mat('#1d1430', { rough: 0.4 }), [0.006, 0.016, 0.0015], [0, 0.022, 0.0031]));
+  return g;
+}
+
+function terminal(rand, pal) {
+  const g = new THREE.Group();
+  const dark = mat('#1d2b53');
+  g.add(part(G.cyl6, dark, [0.003, 0.013, 0.003], [0, 0.0065, 0]));
+  g.add(part(G.box, dark, [0.01, 0.002, 0.008], [0, 0.001, 0]));
+  const screen = new THREE.Group();
+  screen.position.set(0, 0.019, 0);
+  screen.rotation.x = -0.25;
+  screen.add(part(G.box, dark, [0.024, 0.015, 0.002]));
+  screen.add(part(G.box, mat(pal.accent, { glow: 0.8 }), [0.02, 0.011, 0.0006], [0, 0, 0.0012]));
+  g.add(screen);
+  return g;
+}
+
+function cairn(rand, pal) {
+  const g = new THREE.Group();
+  const stone = mat('#a99cb5');
+  g.add(part(G.ico0, stone, [0.013, 0.008, 0.013], [0, 0.003, 0]));
+  g.add(part(G.ico0, mat('#8f839c'), [0.01, 0.007, 0.01], [0, 0.009, 0], [0, 0.6, 0]));
+  g.add(part(G.ico0, stone, [0.007, 0.006, 0.007], [0, 0.014, 0], [0, 1.1, 0]));
+  g.add(part(G.cyl6, mat('#e9e9f0'), [0.0012, 0.024, 0.0012], [0.007, 0.012, 0]));
+  const shape = new THREE.Shape();
+  shape.moveTo(0, 0);
+  shape.lineTo(0.011, -0.003);
+  shape.lineTo(0, -0.006);
+  g.add(part(new THREE.ShapeGeometry(shape), mat(pal.accent, { side: THREE.DoubleSide }), 1, [0.007, 0.024, 0]));
+  return g;
+}
+
+function welcomeArch(rand, pal) {
+  const g = new THREE.Group();
+  const post = mat('#fffaf2');
+  g.add(part(G.box, post, [0.003, 0.03, 0.003], [-0.013, 0.015, 0]));
+  g.add(part(G.box, post, [0.003, 0.03, 0.003], [0.013, 0.015, 0]));
+  g.add(part(G.box, mat(pal.accent, { glow: 0.2 }), [0.033, 0.005, 0.004], [0, 0.031, 0]));
+  g.add(part(G.oct, mat(pal.accent, { glow: 0.5 }), [0.006, 0.009, 0.006], [0, 0.039, 0]));
+  return g;
+}
+
+const EXHIBITS = { village: signpost, music: keyStone, code: terminal, summit: cairn };
+
+// ── placement helpers ────────────────────────────────────────
 function randomNear(center, maxAngle, rand) {
-  const [t1, t2] = tangentBasis(center);
-  const phi = rand() * TAU;
-  const a = maxAngle * Math.sqrt(rand());
-  const tangent = t1.multiplyScalar(Math.cos(phi)).add(t2.multiplyScalar(Math.sin(phi)));
-  return center.clone().multiplyScalar(Math.cos(a)).add(tangent.multiplyScalar(Math.sin(a))).normalize();
+  return offsetDir(center, tangentBasis(center), rand() * TAU, maxAngle * Math.sqrt(rand()));
 }
 
 function isFlat(terrain, dir, h) {
@@ -290,7 +340,16 @@ function placeAt(obj, dir, h, spin) {
   obj.rotateY(spin);
 }
 
-function scatter(terrain, group, anims, rand, { center, size, owner, palette }, build, count, opts = {}) {
+/** Stand `obj` on the ground at `dir`, turned so its +z side faces `toward`. */
+function placeFacing(obj, dir, h, toward) {
+  const fwd = new THREE.Vector3().subVectors(toward, dir);
+  fwd.addScaledVector(dir, -fwd.dot(dir)).normalize();
+  const x = new THREE.Vector3().crossVectors(dir, fwd);
+  obj.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(x, dir, fwd));
+  obj.position.copy(dir).multiplyScalar(1 + h - 0.002);
+}
+
+function scatter(terrain, group, anims, rand, { center, size, owner, palette, trail }, build, count, opts = {}) {
   const { minDist = 0.035, avoid = 0.1, minH = 0.0095, maxH = 1 } = opts;
   const placed = [];
   for (let tries = 0; placed.length < count && tries < count * 80; tries++) {
@@ -299,6 +358,7 @@ function scatter(terrain, group, anims, rand, { center, size, owner, palette }, 
     const s = terrain.sample(dir);
     if (!s.land || s.owner !== owner || s.h < minH || s.h > maxH) continue;
     if (placed.some((p) => p.angleTo(dir) < minDist)) continue;
+    if (trail && nearTrail(trail, dir)) continue;
     if (!isFlat(terrain, dir, s.h)) continue;
     placed.push(dir);
     const obj = build(rand, palette, anims);
@@ -316,12 +376,72 @@ function beacon(color) {
   return { group: g, gem, ring, hit };
 }
 
+/** Stepping stones, stop markers, and exhibits for one island's trail. */
+function buildTrail(terrain, r, trail, group) {
+  const rand = mulberry32(77 + r.index);
+  const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+  const hitGeo = new THREE.SphereGeometry(0.014, 8, 6);
+  const hits = [];
+  const rings = [];
+
+  // stepping stones every other path point, jittered a little
+  const idx = [];
+  for (let i = 0; i < trail.path.length; i += 2) idx.push(i);
+  const stones = new THREE.InstancedMesh(G.cyl6, mat(r.palette.path, { rough: 1 }), idx.length);
+  const m = new THREE.Matrix4(), q = new THREE.Quaternion(), qs = new THREE.Quaternion();
+  const s = new THREE.Vector3(), p = new THREE.Vector3();
+  idx.forEach((i, k) => {
+    const [a, b] = tangentBasis(trail.path[i]);
+    const d = trail.path[i].clone()
+      .addScaledVector(a, (rand() - 0.5) * 0.003)
+      .addScaledVector(b, (rand() - 0.5) * 0.003)
+      .normalize();
+    const h = terrain.sample(d).h;
+    p.copy(d).multiplyScalar(1 + h + 0.0003);
+    q.setFromUnitVectors(UP, d).multiply(qs.setFromAxisAngle(UP, rand() * TAU));
+    const w = 0.005 + rand() * 0.002;
+    s.set(w, 0.0016, w * (0.8 + rand() * 0.3));
+    stones.setMatrixAt(k, m.compose(p, q, s));
+  });
+  group.add(stones);
+
+  const ringMat = mat(r.palette.accent, { glow: 0.7 });
+  trail.stops.forEach((stop, k) => {
+    // glowing ring on the ground where you stand
+    const ring = part(G.torus, ringMat, 0.009, [0, 0, 0], [Math.PI / 2, 0, 0]);
+    const holder = new THREE.Group();
+    placeAt(holder, stop.dir, terrain.sample(stop.dir).h + 0.0035, 0);
+    holder.add(ring);
+    group.add(holder);
+    rings.push(ring);
+
+    const targets = [stop.dir];
+    if (stop.kind !== 'finale') {
+      const build = stop.kind === 'welcome' ? welcomeArch : EXHIBITS[r.kit] ?? signpost;
+      const ex = build(rand, r.palette);
+      placeFacing(ex, stop.exhibitDir, terrain.sample(stop.exhibitDir).h, stop.dir);
+      group.add(ex);
+      targets.push(stop.exhibitDir);
+    }
+    for (const d of targets) {
+      const hit = new THREE.Mesh(hitGeo, hitMat);
+      hit.position.copy(d).multiplyScalar(1 + terrain.sample(d).h + 0.008);
+      hit.userData = { region: r.index, stop: k };
+      group.add(hit);
+      hits.push(hit);
+    }
+  });
+
+  return { hits, rings };
+}
+
 // ── public ───────────────────────────────────────────────────
-export function buildProps(terrain) {
+export function buildProps(terrain, trails) {
   const group = new THREE.Group();
   const anims = [];
   const beacons = [];
   const anchors = [];
+  const trailProps = [];
 
   for (const r of terrain.regions) {
     const rand = mulberry32(1000 + r.index * 77);
@@ -332,7 +452,10 @@ export function buildProps(terrain) {
     placeAt(lm, r.center, h, rand() * TAU);
     group.add(lm);
 
-    const area = { center: r.center, size: r.size * 1.1, owner: r.index, palette: r.palette };
+    const trail = trails[r.index];
+    trailProps.push(buildTrail(terrain, r, trail, group));
+
+    const area = { center: r.center, size: r.size * 1.1, owner: r.index, palette: r.palette, trail };
     for (const [build, count, opts] of kit.scatter) scatter(terrain, group, anims, rand, area, build, count, opts);
 
     const b = beacon(r.palette.accent);
@@ -353,6 +476,7 @@ export function buildProps(terrain) {
     group,
     anchors,
     hitTargets: beacons.map((b) => b.hit),
+    trails: trailProps,
     update(t, focus) {
       for (const a of anims) a(t);
       beacons.forEach((b, i) => {
@@ -362,6 +486,9 @@ export function buildProps(terrain) {
         const target = i === focus ? 1.45 : 1;
         b.group.scale.setScalar(THREE.MathUtils.lerp(b.group.scale.x, target, 0.12));
       });
+      for (const tp of trailProps) {
+        tp.rings.forEach((ring, k) => ring.scale.setScalar(0.009 * (1 + Math.sin(t * 3 + k) * 0.12)));
+      }
     },
   };
 }

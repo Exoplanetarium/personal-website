@@ -9,11 +9,11 @@
 // ─────────────────────────────────────────────────────────────
 
 export const profile = {
-  name: 'Your Name',
-  tagline: 'Pianist · Programmer · Collector of small worlds',
+  name: 'David Hadi',
+  tagline: 'Developer · Pianist · A Third Thing',
   links: [
     { label: 'GitHub', href: 'https://github.com/Exoplanetarium' },
-    { label: 'Email', href: 'mailto:you@example.com' },
+    { label: 'Email', href: 'mailto:drhu.contact@gmail.com' },
   ],
 };
 
@@ -21,7 +21,7 @@ export const sections = [
   {
     id: 'about',
     title: 'About Me',
-    place: 'The Home Isles',
+    place: 'Bag End',
     theme: 'village',
     lat: 18,
     lon: 8,
@@ -43,7 +43,7 @@ export const sections = [
   {
     id: 'music',
     title: 'Music',
-    place: 'Sonata Shores',
+    place: 'Yu Jia Wang is the best pianist imo',
     theme: 'music',
     lat: 38,
     lon: 100,
@@ -72,7 +72,7 @@ export const sections = [
   {
     id: 'cs',
     title: 'Computer Science',
-    place: 'Silicon Mesa',
+    place: 'Silicon Valley',
     theme: 'code',
     lat: -24,
     lon: -98,
@@ -101,7 +101,7 @@ export const sections = [
   {
     id: 'achievements',
     title: 'Achievements',
-    place: 'Mount Milestone',
+    place: 'El Capitan',
     theme: 'summit',
     lat: -12,
     lon: 172,
