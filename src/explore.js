@@ -82,7 +82,6 @@ export function createExplorer({ canvas, camera, scene, terrain, trails, props, 
     pendingTravel: -1,
     s: 0, // position along the trail (path index, fractional)
     stop: 0,
-    hSmooth: 0,
     lookDir: new THREE.Vector3(),
     yaw: 0,
     pitch: 0,
@@ -118,30 +117,39 @@ export function createExplorer({ canvas, camera, scene, terrain, trails, props, 
     return out.copy(P[i]).lerp(P[i + 1], f).normalize();
   }
 
+  /** Smoothed walking height at path position s (precomputed so it never dips below the ground). */
+  function eyeHeight(s) {
+    const H = st.trail.eyeH;
+    const i = clamp(Math.floor(s), 0, H.length - 2);
+    return lerp(H[i], H[i + 1], clamp(s - i, 0, 1));
+  }
+
   /** Where the camera should be on the ground right now (writes v.eye / v.quat). */
   function groundPose(dt, snap) {
     const stops = st.trail.stops;
+    const last = st.trail.path.length - 1;
     const dir = pathDir(st.s, v.dir);
-    const h = Math.max(0, terrain.sample(dir).h);
-    st.hSmooth = snap ? h : st.hSmooth + (h - st.hSmooth) * Math.min(1, dt * 6);
-    v.eye.copy(dir).multiplyScalar(1 + st.hSmooth + EYE);
+    v.eye.copy(dir).multiplyScalar(1 + eyeHeight(st.s) + EYE);
 
     if (st.walk) {
       const w = st.walk;
       const sign = Math.sign(w.to - w.from) || 1;
-      const ahead = pathDir(clamp(st.s + sign * 7, 0, st.trail.path.length - 1), v.ahead);
-      v.target.copy(ahead).multiplyScalar(1 + Math.max(0, terrain.sample(ahead).h) + EYE * 0.8);
+      // look at a blend of points well ahead, so small wiggles in the trail don't swing the view
+      v.target.set(0, 0, 0);
+      for (const d of [10, 16, 22]) {
+        const s = clamp(st.s + sign * d, 0, last);
+        v.target.addScaledVector(pathDir(s, v.ahead), 1 + eyeHeight(s) + EYE * 0.8);
+      }
+      v.target.divideScalar(3);
       // as you arrive, turn toward what you came to see
-      v.target.lerp(stops[w.target].look, smooth(0.7, 1, w.k));
-      // gentle footstep bob
-      v.eye.addScaledVector(dir, Math.sin(st.s * 1.8) * 0.00035);
+      v.target.lerp(stops[w.target].look, smooth(0.6, 1, w.k));
     } else {
       v.target.copy(stops[st.stop].look);
     }
 
     const desired = v.target.sub(v.eye).normalize();
     if (snap) st.lookDir.copy(desired);
-    else st.lookDir.lerp(desired, 1 - Math.exp(-dt * 4)).normalize();
+    else st.lookDir.lerp(desired, 1 - Math.exp(-dt * 3)).normalize();
 
     v.right.crossVectors(st.lookDir, dir).normalize();
     v.fwd.copy(st.lookDir).applyAxisAngle(dir, st.yaw);

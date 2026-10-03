@@ -113,7 +113,9 @@ export class Terrain {
       const s = (r.size - d + warp * r.size * 0.8) / r.size;
       if (s > best) { best = s; owner = r.index; core = clamp(1 - d / r.size, 0, 1); }
     }
-    const islet = (fbm(nB, x * 3.4 - 4, y * 3.4, z * 3.4, 3) - 0.3) * 6;
+    // little islets only out at sea: capped by how far we are from a named island's coast,
+    // so they can't punch low "wild" craters into an island (and still meet its coast smoothly)
+    const islet = Math.min((fbm(nB, x * 3.4 - 4, y * 3.4, z * 3.4, 3) - 0.3) * 6, -best * 2);
     if (islet > best) { best = islet; owner = -1; core = 0; }
 
     if (best <= 0) {
@@ -310,7 +312,8 @@ export class Terrain {
     const { geo } = this._colorize(new Float32Array(positions), new Float32Array(heights), 1234 + region.index);
     const mesh = new THREE.Mesh(
       geo,
-      new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.92, metalness: 0 }),
+      // double-sided as a safety net: if the camera ever grazes the ground you see dirt, not a hole
+      new THREE.MeshStandardMaterial({ vertexColors: true, flatShading: true, roughness: 0.92, metalness: 0, side: THREE.DoubleSide }),
     );
     mesh.visible = false;
     return mesh;
