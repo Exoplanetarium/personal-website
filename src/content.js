@@ -31,7 +31,9 @@ export const sections = [
     items: [
       {
         title: 'Things I love',
-        text: 'Practicing in a room with great acoustics and listening to the sound echoing off the walls. \n Having intellectual conversations with my friends \n Kombucha',
+        text: `Practicing in a room with great acoustics and listening to the sound echoing off the walls.
+              Having intellectual conversations with my friends.
+              Kombucha`,
       },
       {
         title: 'Currently',
@@ -56,8 +58,8 @@ export const sections = [
       //            (e.g. 'recordings/ballade-1.mp3'); any other URL (YouTube…) becomes a link.
       {
         title: 'Repertoire',
-        meta: 'Pieces I have played',
-        text: 'Press play and keep listening while you wander the island.',
+        meta: 'Pieces I enjoyed playing',
+        text: 'NOTE: ADD RECORDINGS HERE',
         marker: 'obelisk',
         pieces: [
           { title: 'Piano Concerto No. 1 in F# minor, Op. 1, Mvt 1: Vivace - Moderato', composer: 'Rachmaninoff', year: 2027 },
@@ -94,12 +96,19 @@ export const sections = [
         title: 'Decompute',
         meta: 'ReactJS',
         text: 'Decentralized computing platform to help combat the use of financially and environmentally expensive data centers.',
-        links: [{ label: 'GitHub', href: 'https://github.com/Exoplanetarium/Decompute' }],
+        links: [{ label: 'Source', href: 'https://github.com/Exoplanetarium/Decompute' }],
       },
       {
-        title: 'Project Three',
-        meta: 'C++',
-        text: 'Another project worth showing off.',
+        title: 'Todo Webapp',
+        meta: 'ReactJS',
+        text: 'Simple modern todo webapp that connects to my school\'s services and calendars. Built initially for myself but later shared with others.',
+        links: [{ label: 'Source', href: 'https://github.com/Exoplanetarium/todolist' }],
+      },
+      {
+        title: 'Crystal',
+        meta: 'ReactJS · AI',
+        text: 'AI-powered Chrome extension that helps make corporate sustainability reports easy to understand.',
+        links: [{ label: 'Source', href: 'https://github.com/Exoplanetarium/Crystal' }],
       },
     ],
   },

@@ -43,7 +43,7 @@ function renderItem(it, heading = 'h3') {
       <${heading}>${esc(it.title)}</${heading}>
       ${it.meta ? `<span class="meta">${esc(it.meta)}</span>` : ''}
     </div>
-    ${it.text ? `<p>${esc(it.text)}</p>` : ''}
+    ${it.text ? `<p class="text">${esc(it.text)}</p>` : ''}
     ${renderPieces(it.pieces)}
     ${renderLinks(it.links)}`;
 }

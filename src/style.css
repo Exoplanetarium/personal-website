@@ -782,3 +782,7 @@ body.exploring .hud {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: 0.01s !important; }
 }
+
+/* keep line breaks written in content.js ("\n") */
+.intro,
+p.text { white-space: pre-line; }
