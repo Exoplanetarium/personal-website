@@ -24,6 +24,26 @@ Everything lives in **`src/content.js`**:
 
 Each section's `id` doubles as a shareable URL: `…/#music` lands straight on that island.
 
+### Repertoire lists and recordings
+
+Any item can become a list of pieces with recordings. Give it `pieces`, and optionally a special trail marker:
+
+```js
+{
+  title: 'Repertoire',
+  marker: 'obelisk',            // a carved stone obelisk marks this stop
+  pieces: [
+    { title: 'Ballade No. 1', composer: 'Chopin', year: 2025, recording: 'recordings/ballade-1.mp3' },
+    { title: 'Clair de lune', composer: 'Debussy', recording: 'https://youtu.be/…' },
+    { title: 'Prelude in C major', composer: 'Bach' },   // no recording is fine too
+  ],
+}
+```
+
+- **Audio files** (`.mp3`, `.m4a`, `.ogg`, `.wav`…) go in `public/recordings/` and play right on the page. Playback continues while you walk the island, with a "now playing" pill to pause or stop.
+- **Any other URL** (YouTube, SoundCloud, Drive…) shows as a "listen" link that opens in a new tab.
+- Keep audio files reasonably small (an MP3 at ~128–192 kbps is plenty). GitHub rejects files over 100 MB.
+
 ## Exploring an island
 
 Clicking an island flies you down to ground level. A trail of stepping stones runs from a welcome arch on the beach, past one stop per entry in `items`, up to the island's landmark. Each stop has an exhibit (signpost, piano-key monolith, terminal, cairn), and its text unfolds in a card beside it.

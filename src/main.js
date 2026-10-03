@@ -36,7 +36,7 @@ camera.add(rim);
 const terrain = new Terrain(sections);
 const land = terrain.buildMesh();
 const ocean = terrain.buildOcean();
-const trails = terrain.regions.map((r) => planTrail(terrain, r, sections[r.index].items?.length ?? 0));
+const trails = terrain.regions.map((r) => planTrail(terrain, r, sections[r.index].items ?? []));
 const props = buildProps(terrain, trails);
 const sky = buildSky(scene);
 scene.add(land.mesh, ocean.mesh, props.group);

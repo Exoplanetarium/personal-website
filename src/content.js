@@ -27,16 +27,17 @@ export const sections = [
     lon: 8,
     size: 0.5,
     intro:
-      "Hi! This is where I live (metaphorically). Write a few sentences about who you are, where you're from, and what you care about.",
+      "Hi! Welcome to my life. Take a look around and explore the identities that make up who I am.",
     items: [
+      {
+        title: 'Things I love',
+        text: 'Practicing in a room with great acoustics and listening to the sound echoing off the walls. \n Having intellectual conversations with my friends \n Kombucha',
+      },
       {
         title: 'Currently',
         meta: '2026',
-        text: 'What you are studying, building, or practicing right now.',
-      },
-      {
-        title: 'Things I love',
-        text: 'Late-night practice sessions, elegant algorithms, and good coffee.',
+        text: 'Research in automatic music transcription.',
+        links: [{ label: 'Learn More', href: 'https://github.com/Exoplanetarium/LiveScore' }],
       },
     ],
   },
@@ -50,22 +51,26 @@ export const sections = [
     size: 0.46,
     intro: 'Piano has been part of my life for years. Here are some performances and pieces I am proud of.',
     items: [
+      // `marker: 'obelisk'` gives this stop a stone obelisk; `pieces` lists your repertoire.
+      // recording: an audio file in public/recordings/ plays right on the page
+      //            (e.g. 'recordings/ballade-1.mp3'); any other URL (YouTube…) becomes a link.
       {
-        title: 'Spring Recital',
-        meta: '2025 · Solo',
-        text: 'Chopin – Ballade No. 1 in G minor. Replace this with your own program notes.',
-        links: [{ label: 'Watch', href: '#' }],
+        title: 'Repertoire',
+        meta: 'Pieces I have played',
+        text: 'Press play and keep listening while you wander the island.',
+        marker: 'obelisk',
+        pieces: [
+          { title: 'Piano Concerto No. 1 in F# minor, Op. 1, Mvt 1: Vivace - Moderato', composer: 'Rachmaninoff', year: 2027 },
+          { title: 'Estampes', composer: 'Debussy', year: 2026 },
+          { title: 'Prelude in B minor, Op. 32 Nos. 10 & 12', composer: 'Rachmaninoff', year: 2026 },
+          { title: 'Ballade No. 1 in G minor, Op. 23', composer: 'Chopin', year: 2025 },
+          { title: 'Etude Op. 25 No. 12 (Winter Wind)', composer: 'Chopin', year: 2024 },
+        ],
       },
       {
         title: 'Piano Competition',
         meta: '2024 · 1st place',
         text: 'A short description of the competition and what you played.',
-      },
-      {
-        title: 'Original Compositions',
-        meta: 'Ongoing',
-        text: 'Pieces you have written or arranged.',
-        links: [{ label: 'Listen', href: '#' }],
       },
     ],
   },
@@ -82,14 +87,14 @@ export const sections = [
       {
         title: 'This Website',
         meta: 'Three.js · Vite',
-        text: 'A procedurally generated low-poly planet where every island is a part of my life.',
+        text: 'A planet-style personal website cataloging my achievements and interests. Easter eggs included.',
         links: [{ label: 'Source', href: 'https://github.com/Exoplanetarium/personal-website' }],
       },
       {
-        title: 'Project Two',
-        meta: 'Python · ML',
-        text: 'What it does, why you built it, and what you learned.',
-        links: [{ label: 'GitHub', href: '#' }],
+        title: 'Decompute',
+        meta: 'ReactJS',
+        text: 'Decentralized computing platform to help combat the use of financially and environmentally expensive data centers.',
+        links: [{ label: 'GitHub', href: 'https://github.com/Exoplanetarium/Decompute' }],
       },
       {
         title: 'Project Three',

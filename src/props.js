@@ -319,7 +319,34 @@ function welcomeArch(rand, pal) {
   return g;
 }
 
+/** A tall carved stone obelisk, for stops that hold a list (e.g. a repertoire). */
+function stoneObelisk(rand, pal) {
+  const g = new THREE.Group();
+  const stone = mat('#ddd3ea', { rough: 0.95 });
+  const dark = mat('#9a8fb0', { rough: 1 });
+  g.add(part(G.box, dark, [0.028, 0.005, 0.028], [0, 0.0025, 0]));
+  g.add(part(G.box, stone, [0.021, 0.004, 0.021], [0, 0.007, 0]));
+  // the shaft: a tapered square column (rotated so its faces line up with the base)
+  const H = 0.04, W = 0.012, y0 = 0.009;
+  g.add(part(G.taper4, stone, [W, H, W], [0, y0 + H / 2, 0], [0, Math.PI / 4, 0]));
+  // carved bands
+  for (const f of [0.22, 0.5, 0.78]) {
+    const w = 1.414 * (0.5 - 0.15 * f) * W + 0.0007;
+    g.add(part(G.box, dark, [w, 0.0011, w], [0, y0 + H * f, 0]));
+  }
+  // a little musical staff carved into the front face
+  const faceW = 1.414 * (0.5 - 0.15 * 0.62) * W;
+  for (let i = 0; i < 5; i++) {
+    g.add(part(G.box, dark, [faceW * 0.7, 0.0004, 0.0006], [0, y0 + H * 0.58 + i * 0.0016, faceW / 2]));
+  }
+  // glowing pyramidion
+  g.add(part(G.cone4, mat(pal.accent, { glow: 0.6 }), [0.0085, 0.008, 0.0085], [0, y0 + H + 0.004, 0], [0, Math.PI / 4, 0]));
+  return g;
+}
+
 const EXHIBITS = { village: signpost, music: keyStone, code: terminal, summit: cairn };
+// Special exhibits a content item can ask for with `marker: '...'`
+const MARKERS = { obelisk: stoneObelisk };
 
 // ── placement helpers ────────────────────────────────────────
 function randomNear(center, maxAngle, rand) {
@@ -417,7 +444,7 @@ function buildTrail(terrain, r, trail, group) {
 
     const targets = [stop.dir];
     if (stop.kind !== 'finale') {
-      const build = stop.kind === 'welcome' ? welcomeArch : EXHIBITS[r.kit] ?? signpost;
+      const build = stop.kind === 'welcome' ? welcomeArch : MARKERS[stop.marker] ?? EXHIBITS[r.kit] ?? signpost;
       const ex = build(rand, r.palette);
       placeFacing(ex, stop.exhibitDir, terrain.sample(stop.exhibitDir).h, stop.dir);
       group.add(ex);

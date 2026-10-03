@@ -18,13 +18,15 @@ const DETOUR_STATES = 13; // -0.036 … +0.036
  * Lay out a walking trail on an island: a welcome stop near the beach, one stop per content
  * item spiralling inward (and uphill), and a final stop looking at the landmark.
  *
+ * `items` are the section's content items; an item's `marker` picks a special exhibit for its stop.
+ *
  * Returns {
  *   path:  Vector3[] unit directions, PATH_STEP apart
  *   eyeH:  ground height to walk at for each path point (smoothed, never below the terrain)
- *   stops: [{ kind, item, pathIdx, dir, exhibitDir, look }]
+ *   stops: [{ kind, item, marker, pathIdx, dir, exhibitDir, look }]
  * }
  */
-export function planTrail(terrain, region, itemCount) {
+export function planTrail(terrain, region, items = []) {
   const { center, size, index } = region;
   const basis = tangentBasis(center);
   const rand = mulberry32(500 + index * 13);
@@ -61,7 +63,7 @@ export function planTrail(terrain, region, itemCount) {
 
   const view = LANDMARK_VIEW[region.kit] ?? 0.09;
   const clear = LANDMARK_CLEAR[region.kit] ?? 0.06;
-  const n = itemCount + 2;
+  const n = items.length + 2;
   const b0 = rand() * TAU;
   const turn = Math.min(1.25, (TAU * 0.8) / Math.max(1, n - 2));
 
@@ -220,14 +222,19 @@ export function planTrail(terrain, region, itemCount) {
     const outside = bend.length() > 0.35
       ? bend.normalize().negate()
       : new THREE.Vector3().crossVectors(dir, bis).multiplyScalar(k % 2 ? 1 : -1);
+    const marker = items[k - 1]?.marker ?? null;
+    // tall markers stand farther back (so the whole thing fits in view) and get looked at higher up
+    const tall = marker === 'obelisk';
+    const reach = tall ? 1.5 : 1;
     const candidates = [
       [0.042, 0.026], [0.042, -0.026], [0.03, 0.04], [0.03, -0.04], [0.0, 0.045], [0.0, -0.045],
-    ].map(([f, s]) => dir.clone().addScaledVector(bis, f).addScaledVector(outside, s).normalize());
+    ].map(([f, s]) => dir.clone().addScaledVector(bis, f * reach).addScaledVector(outside, s * reach).normalize());
     const exhibitDir =
       candidates.find((d) => isLand(d) && clearOfPath(d, 0.02) && isFlat(d)) ??
       candidates.find((d) => isLand(d) && clearOfPath(d, 0.016)) ??
       candidates[0];
-    return { kind, item: k - 1, pathIdx, dir, exhibitDir, look: up(exhibitDir, 0.014) };
+    const lift = tall ? 0.022 : 0.014;
+    return { kind, item: k - 1, marker, pathIdx, dir, exhibitDir, look: up(exhibitDir, lift) };
   });
 
   return { path, eyeH, stops };

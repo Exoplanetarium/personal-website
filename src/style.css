@@ -586,6 +586,159 @@ body.exploring .hud {
 .card-action:hover { transform: translateX(3px); }
 .card-action.ghost { background: transparent; box-shadow: inset 0 0 0 2px var(--ink); }
 
+/* ── repertoire lists (pieces + recordings) ── */
+.card.is-list { width: min(420px, calc(100vw - 48px)); }
+.pieces {
+  list-style: none;
+  margin: 14px 0 0;
+  padding: 0;
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+  overflow: hidden;
+}
+.piece {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+}
+.piece + .piece { border-top: 1px solid color-mix(in srgb, var(--ink) 10%, transparent); }
+.piece.is-current { background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.piece-text { display: flex; flex-direction: column; min-width: 0; }
+.piece-title { font: 600 15px / 1.25 var(--font-head); }
+.piece-sub { font-size: 13px; opacity: 0.7; }
+.piece-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+  opacity: 0;
+}
+.piece.is-current .piece-progress { opacity: 1; }
+
+.piece-play,
+.piece-link,
+.piece-none,
+.np-toggle {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+}
+.piece-play,
+.np-toggle {
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: var(--accent);
+  color: var(--ink);
+  cursor: pointer;
+  transition: transform 0.15s;
+}
+.piece-play:hover,
+.np-toggle:hover { transform: scale(1.08); }
+.piece-link {
+  display: grid;
+  place-items: center;
+  color: var(--ink);
+  text-decoration: none;
+  font-weight: 700;
+  box-shadow: inset 0 0 0 2px var(--accent);
+}
+.piece-link:hover { background: var(--accent); }
+.piece-none {
+  display: grid;
+  place-items: center;
+}
+.piece-none::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  background: color-mix(in srgb, var(--ink) 25%, transparent);
+  transform: rotate(45deg);
+}
+/* play ▶ / pause ❚❚ drawn in CSS so they match the geometric style */
+.piece-play .icon,
+.np-toggle .icon {
+  width: 12px;
+  height: 12px;
+  margin-left: 3px;
+  background: currentColor;
+  clip-path: polygon(0 0, 100% 50%, 0 100%);
+}
+.piece-play.is-playing .icon,
+.np-toggle.is-playing .icon {
+  margin-left: 0;
+  clip-path: polygon(0 0, 35% 0, 35% 100%, 0 100%, 0 0, 65% 0, 100% 0, 100% 100%, 65% 100%, 65% 0);
+}
+.piece-play:focus-visible,
+.piece-link:focus-visible,
+.np-toggle:focus-visible,
+.np-close:focus-visible { outline: 3px solid var(--ink); outline-offset: 2px; }
+
+.now-playing {
+  position: absolute;
+  left: 20px;
+  bottom: 22px;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: min(320px, calc(100vw - 40px));
+  padding: 7px 8px 9px 7px;
+  border-radius: 999px;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+  box-shadow: 0 4px 0 rgba(0, 0, 0, 0.3);
+  --accent: #ff5fa2;
+}
+.now-playing[hidden] { display: none; }
+.np-text { display: flex; flex-direction: column; min-width: 0; }
+.np-label {
+  font: 600 10px var(--font-head);
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.np-title {
+  font: 600 14px var(--font-head);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.np-close {
+  flex: none;
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.np-close:hover { background: color-mix(in srgb, var(--ink) 10%, transparent); }
+.np-bar {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--accent) 25%, transparent);
+}
+.np-bar span {
+  display: block;
+  height: 100%;
+  background: var(--accent);
+  transform: scaleX(0);
+  transform-origin: left;
+}
+
 /* ── small screens: panel becomes a bottom sheet ── */
 @media (max-width: 760px) {
   .hud-btn { top: 14px; padding: 8px 13px; font-size: 13px; }
@@ -603,6 +756,9 @@ body.exploring .hud {
     transform: none !important;
   }
   .card h2 { font-size: 26px; }
+  .card.is-list { width: auto; }
+  /* the bottom of the screen belongs to the card and trail nav here */
+  .now-playing { left: 14px; top: 62px; bottom: auto; }
   .brand { top: 18px; left: 18px; }
   .brand p { font-size: 13px; margin-bottom: 10px; }
   .chips { bottom: 16px; gap: 8px; }

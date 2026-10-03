@@ -1,3 +1,5 @@
+import { createPlayer, isAudioFile } from './player.js';
+
 const esc = (s = '') =>
   String(s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
 
@@ -10,6 +12,31 @@ function renderLinks(links = []) {
     .join('')}</div>`;
 }
 
+/** A list of pieces, each with an optional recording (audio file → play button, URL → link). */
+function renderPieces(pieces = []) {
+  if (!pieces.length) return '';
+  return `<ol class="pieces">${pieces
+    .map((p) => {
+      const rec = p.recording;
+      const action = !rec
+        ? '<span class="piece-none" aria-hidden="true"></span>'
+        : isAudioFile(rec)
+          ? `<button class="piece-play" data-src="${esc(rec)}" data-title="${esc(p.title)}" aria-pressed="false" aria-label="Play ${esc(p.title)}"><span class="icon" aria-hidden="true"></span></button>`
+          : `<a class="piece-link" href="${esc(rec)}" target="_blank" rel="noopener" aria-label="Listen to ${esc(p.title)} (opens in a new tab)">↗</a>`;
+      const sub = [p.composer, p.year].filter(Boolean).join(' · ');
+      return `
+        <li class="piece">
+          ${action}
+          <div class="piece-text">
+            <span class="piece-title">${esc(p.title)}</span>
+            ${sub ? `<span class="piece-sub">${esc(sub)}</span>` : ''}
+          </div>
+          <span class="piece-progress" aria-hidden="true"></span>
+        </li>`;
+    })
+    .join('')}</ol>`;
+}
+
 function renderItem(it, heading = 'h3') {
   return `
     <div class="item-head">
@@ -17,6 +44,7 @@ function renderItem(it, heading = 'h3') {
       ${it.meta ? `<span class="meta">${esc(it.meta)}</span>` : ''}
     </div>
     ${it.text ? `<p>${esc(it.text)}</p>` : ''}
+    ${renderPieces(it.pieces)}
     ${renderLinks(it.links)}`;
 }
 
@@ -80,6 +108,12 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
         <button class="hud-step hud-next" aria-label="Next stop">›</button>
       </nav>
     </div>
+    <div class="now-playing" role="status" hidden>
+      <button class="np-toggle" aria-label="Pause"><span class="icon" aria-hidden="true"></span></button>
+      <div class="np-text"><span class="np-label">Now playing</span><span class="np-title"></span></div>
+      <button class="np-close" aria-label="Stop">✕</button>
+      <span class="np-bar" aria-hidden="true"><span></span></span>
+    </div>
     <aside class="panel" role="dialog" aria-labelledby="panel-title" aria-hidden="true">
       <div class="panel-banner" aria-hidden="true"><span></span><span></span><span></span></div>
       <button class="panel-close" aria-label="Close">✕</button>
@@ -98,6 +132,7 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
     el.addEventListener('pointerleave', () => onHover(-1));
   }
   root.querySelector('.panel-close').addEventListener('click', onClose);
+  const player = createPlayer(root.querySelector('.now-playing'));
 
   // ── explore HUD ───────────────────────────────────────────
   const hud = root.querySelector('.hud');
@@ -175,6 +210,7 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
       exploreApi.hideCard();
     },
     exit() {
+      player.stop();
       document.body.classList.remove('exploring');
       hud.setAttribute('aria-hidden', 'true');
       exploreApi.hideCard();
@@ -195,6 +231,8 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
       cardBody.innerHTML = renderStop(k);
       cardBody.scrollTop = 0;
       card.classList.toggle('is-finale', stops[k].kind === 'finale');
+      card.classList.toggle('is-list', !!sections[region].items?.[stops[k].item]?.pieces?.length);
+      player.sync();
       cardShown = true;
       requestAnimationFrame(() => card.classList.add('open'));
     },
@@ -241,6 +279,7 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
     open(i) {
       panel.style.setProperty('--accent', accents[i]);
       body.innerHTML = renderSection(sections[i]);
+      player.sync();
       body.scrollTop = 0;
       panel.classList.add('open');
       panel.setAttribute('aria-hidden', 'false');
@@ -248,6 +287,8 @@ export function createUI({ profile, sections, accents, landmarks, onSelect, onCl
       chips.forEach((c, k) => c.setAttribute('aria-pressed', String(k === i)));
     },
     close() {
+      // on an island the music keeps going while you walk; from orbit, closing the list stops it
+      if (!document.body.classList.contains('exploring')) player.stop();
       panel.classList.remove('open');
       panel.setAttribute('aria-hidden', 'true');
       document.body.classList.remove('panel-open');
