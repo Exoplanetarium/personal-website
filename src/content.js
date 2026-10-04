@@ -14,6 +14,7 @@ export const profile = {
   links: [
     { label: 'GitHub', href: 'https://github.com/Exoplanetarium' },
     { label: 'Email', href: 'mailto:drhu.contact@gmail.com' },
+    { label: 'LinkedIn', href: 'https://www.linkedin.com/in/davidhadi/' },
   ],
 };
 
@@ -31,9 +32,9 @@ export const sections = [
     items: [
       {
         title: 'Things I love',
-        text: `Practicing in a room with great acoustics and listening to the sound echoing off the walls.
-              Having intellectual conversations with my friends.
-              Kombucha`,
+        text: `* Practicing in a room with great acoustics and listening to the sound echoing off the walls.
+               * Having intellectual conversations with my friends.
+               * Kombucha`,
       },
       {
         title: 'Currently',
