@@ -80,9 +80,6 @@ export const sections = [
           { title: 'Tambourin Chinois', composer: 'Kreisler (arr. Greg Anderson)', year: 2026, links: [{ label: 'Listen', href: 'https://drive.google.com/file/d/171xU_zY6XxCc0mifpXCesDW-wFa-2rs9/view?usp=sharing' }] },
           { title: 'Capriccio Stravagante', composer: 'Farina', year: 2026, links: [{ label: 'Listen', href: 'https://drive.google.com/file/d/1Am5QkGUiX_v5Zvpk7p0_GVkzXIvXuSQM/view?usp=sharing' }] },
           { title: 'Piano Quartet in G minor, K. 478', composer: 'Mozart', year: 2025, links: [{ label: 'Listen', href: 'https://drive.google.com/file/d/16voscvU3OU1Brg0vGQ7YUVWoDSI5KVug/view?usp=sharing' }] },
-          { title: 'Tambourin Chinois', composer: 'Kreisler (arr. Greg Anderson)', year: 2026, links: [{ label: 'Listen', href: 'https://drive.google.com/file/d/171xU_zY6XxCc0mifpXCesDW-wFa-2rs9/view?usp=sharing' }] },
-          { title: 'Tambourin Chinois', composer: 'Kreisler (arr. Greg Anderson)', year: 2026, links: [{ label: 'Listen', href: 'https://drive.google.com/file/d/171xU_zY6XxCc0mifpXCesDW-wFa-2rs9/view?usp=sharing' }] },
-          
         ],
       },
       {
