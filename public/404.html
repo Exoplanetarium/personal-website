@@ -1,0 +1,10 @@
+<!doctype html>
+<meta charset="utf-8" />
+<title>Redirecting…</title>
+<script>
+  // GitHub Pages serves this page for any path it doesn't know. Head back to the site's home page,
+  // passing the last path segment along as ?go=… so the site can decide what to do with it.
+  var parts = location.pathname.split('/');
+  var last = parts.pop() || parts.pop() || '';
+  location.replace(parts.join('/') + '/?go=' + encodeURIComponent(last) + location.hash);
+</script>

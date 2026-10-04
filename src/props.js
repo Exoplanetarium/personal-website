@@ -2,6 +2,7 @@ import * as THREE from 'three';
 import { mulberry32 } from './noise.js';
 import { offsetDir, tangentBasis } from './terrain.js';
 import { nearTrail } from './trails.js';
+import { buildClue } from './clues.js';
 
 const UP = new THREE.Vector3(0, 1, 0);
 const TAU = Math.PI * 2;
@@ -376,7 +377,7 @@ function placeFacing(obj, dir, h, toward) {
   obj.position.copy(dir).multiplyScalar(1 + h - 0.002);
 }
 
-function scatter(terrain, group, anims, rand, { center, size, owner, palette, trail }, build, count, opts = {}) {
+function scatter(terrain, group, anims, rand, { center, size, owner, palette, trail, keepClear = [] }, build, count, opts = {}) {
   const { minDist = 0.035, avoid = 0.1, minH = 0.0095, maxH = 1 } = opts;
   const placed = [];
   for (let tries = 0; placed.length < count && tries < count * 80; tries++) {
@@ -386,6 +387,7 @@ function scatter(terrain, group, anims, rand, { center, size, owner, palette, tr
     if (!s.land || s.owner !== owner || s.h < minH || s.h > maxH) continue;
     if (placed.some((p) => p.angleTo(dir) < minDist)) continue;
     if (trail && nearTrail(trail, dir)) continue;
+    if (keepClear.some((k) => k.angleTo(dir) < 0.02)) continue;
     if (!isFlat(terrain, dir, s.h)) continue;
     placed.push(dir);
     const obj = build(rand, palette, anims);
@@ -482,7 +484,13 @@ export function buildProps(terrain, trails) {
     const trail = trails[r.index];
     trailProps.push(buildTrail(terrain, r, trail, group));
 
-    const area = { center: r.center, size: r.size * 1.1, owner: r.index, palette: r.palette, trail };
+    const clue = buildClue(terrain, r, trail);
+    if (clue) {
+      group.add(clue.obj);
+      anims.push(clue.anim);
+    }
+
+    const area = { center: r.center, size: r.size * 1.1, owner: r.index, palette: r.palette, trail, keepClear: clue ? [clue.dir] : [] };
     for (const [build, count, opts] of kit.scatter) scatter(terrain, group, anims, rand, area, build, count, opts);
 
     const b = beacon(r.palette.accent);

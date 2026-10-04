@@ -82,6 +82,7 @@ function moon() {
 
 function ringedPlanet() {
   const g = new THREE.Group();
+  g.userData.radius = 1.1;
   g.add(new THREE.Mesh(
     new THREE.IcosahedronGeometry(1.1, 1),
     new THREE.MeshStandardMaterial({ color: '#ff8a5c', flatShading: true, roughness: 0.9, fog: false }),
@@ -127,6 +128,8 @@ export function buildSky(scene) {
   scene.add(planet);
 
   return {
+    /** The ringed planet in the distance (its first child is the body; set userData.frozen to stop the spin). */
+    planet,
     /** 0 = orbit view, 1 = standing on the ground (the glow shell would surround the camera). */
     setGroundLevel(k) {
       atmo.visible = k < 0.5;
@@ -135,7 +138,7 @@ export function buildSky(scene) {
       for (const p of pivots) p.rotateX(p.userData.speed * dt);
       moonPivot.rotation.y = t * 0.06;
       m.rotation.y = t * 0.2;
-      planet.rotation.y = t * 0.03;
+      if (!planet.userData.frozen) planet.rotation.y += dt * 0.03;
     },
   };
 }

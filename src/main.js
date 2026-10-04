@@ -12,6 +12,25 @@ import { createExplorer } from './explore.js';
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
 document.title = profile.name;
 
+// ── easter egg: a secret word on the end of the URL opens the hideout ──
+// GitHub Pages sends unknown paths to 404.html, which forwards here as ?go=<word>.
+const SECRET = 0x6f8b37fb;
+const hashWord = (w) => {
+  let h = 0x811c9dc5;
+  for (const c of w) h = Math.imul(h ^ c.charCodeAt(0), 0x01000193);
+  return h >>> 0;
+};
+const query = new URLSearchParams(location.search);
+const forwarded = query.get('go');
+const word = (forwarded ?? location.pathname.split('/').filter(Boolean).pop() ?? '').toLowerCase();
+const secret = hashWord(word) === SECRET;
+if (forwarded !== null) {
+  query.delete('go');
+  const rest = query.toString();
+  history.replaceState(null, '', location.pathname + (secret ? word : '') + (rest ? `?${rest}` : '') + location.hash);
+}
+const homePath = () => (secret ? location.pathname.replace(/[^/]*\/?$/, '') : location.pathname);
+
 const LANDMARKS = { village: 'The Cottage', music: 'The Keyboard Henge', code: 'The Stack', summit: 'The Summit' };
 
 // ── renderer / scene / camera ────────────────────────────────
@@ -68,6 +87,7 @@ function scheduleAutoRotate() {
 // ── state ────────────────────────────────────────────────────
 let hover = -1;
 let flight = null;
+let hideout = null;
 let overviewDist = 3.2;
 const shift = { x: 0, y: 0 };
 const size = { w: 1, h: 1 };
@@ -186,7 +206,7 @@ function pick() {
 }
 
 canvas.addEventListener('pointermove', (e) => {
-  if (e.pointerType !== 'mouse' || explorer.active) return;
+  if (e.pointerType !== 'mouse' || explorer.active || hideout) return;
   setPointer(e);
   pointerInside = true;
   pointerDirty = true;
@@ -196,7 +216,7 @@ canvas.addEventListener('pointerleave', () => {
   if (!explorer.active) setHover(-1);
 });
 canvas.addEventListener('pointerdown', (e) => {
-  if (explorer.active) return;
+  if (explorer.active || hideout) return;
   down = { x: e.clientX, y: e.clientY, t: performance.now() };
 });
 canvas.addEventListener('pointerup', (e) => {
@@ -212,7 +232,8 @@ canvas.addEventListener('pointerup', (e) => {
 
 addEventListener('keydown', (e) => {
   if (e.key === 'Escape') {
-    if (ui.panelOpen) ui.close();
+    if (hideout) hideout.leave();
+    else if (ui.panelOpen) ui.close();
     else explorer.exit();
     return;
   }
@@ -273,15 +294,16 @@ function frame() {
   elapsed += dt;
   const t = elapsed;
 
-  // the explorer drives the camera while you're on an island
+  // the explorer drives the camera while you're on an island (and the hideout while you're there)
   explorer.update(t, dt, size.w, size.h);
-  if (!explorer.active) {
+  if (hideout) hideout.update(t, dt);
+  else if (!explorer.active) {
     if (flight) updateFlight(t);
     else controls.update(dt);
   }
   applyViewShift();
 
-  if (pointerDirty && pointerInside && !flight && !down && !explorer.active) {
+  if (pointerDirty && pointerInside && !flight && !down && !explorer.active && !hideout) {
     pointerDirty = false;
     const i = pick();
     if (i !== hover) setHover(i);
@@ -292,22 +314,54 @@ function frame() {
   ocean.update(t);
   props.update(t, hover);
   sky.update(t, dt);
-  if (!explorer.active) updateLabels();
+  if (!explorer.active && !hideout) updateLabels();
 
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
 
 // ── intro: swoop in from deep space ──────────────────────────
-const fromHash = sections.findIndex((s) => `#${s.id}` === location.hash);
-const startDir = terrain.regions[fromHash >= 0 ? fromHash : 0].center.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), -0.9);
+const UP = new THREE.Vector3(0, 1, 0);
+const fromHash = secret ? -1 : sections.findIndex((s) => `#${s.id}` === location.hash);
+// for the hideout, come to rest with the ringed planet well off to the side, ready to turn and face it
+const planetDir = sky.planet.position.clone().normalize();
+const restDir = secret
+  ? planetDir.clone().multiplyScalar(0.5).addScaledVector(new THREE.Vector3().crossVectors(planetDir, UP).normalize(), 0.85).addScaledVector(UP, 0.15).normalize()
+  : terrain.regions[fromHash >= 0 ? fromHash : 0].center.clone().applyAxisAngle(UP, -0.3);
+const startDir = restDir.clone().applyAxisAngle(UP, -0.6);
 camera.position.copy(startDir).multiplyScalar(overviewDist * 2.6);
 camera.lookAt(0, 0, 0);
-flyTo(startDir.clone().applyAxisAngle(new THREE.Vector3(0, 1, 0), 0.6), overviewDist, 2.4);
+flyTo(restDir, overviewDist, 2.4);
 if (fromHash >= 0) setTimeout(() => landOn(fromHash), reduceMotion ? 0 : 2200);
+if (secret) openHideout();
 setTimeout(() => explorer.prebuild(), 3000);
 
+function openHideout() {
+  const loading = import('./secret.js'); // fetched only now, never on a normal visit
+  controls.autoRotate = false;
+  setTimeout(async () => {
+    const { createHideout } = await loading;
+    flight = null;
+    controls.enabled = false;
+    hideout = createHideout({
+      scene,
+      camera,
+      canvas,
+      planet: sky.planet,
+      reduceMotion,
+      homePosition: camera.position.clone(),
+      onHome: () => {
+        hideout = null;
+        history.replaceState(null, '', homePath() + location.search);
+        controls.enabled = true;
+        scheduleAutoRotate();
+      },
+    });
+  }, reduceMotion ? 0 : 2600);
+}
+
 addEventListener('hashchange', () => {
+  if (hideout) return;
   const i = sections.findIndex((s) => `#${s.id}` === location.hash);
   if (i >= 0 && i !== explorer.region) landOn(i);
 });
