@@ -135,9 +135,9 @@ export const sections = [
     size: 0.48,
     intro: 'Awards, honors, and milestones along the climb.',
     items: [
-      { title: 'Award Name', meta: '2025', text: 'What it was for.' },
-      { title: 'Competition Result', meta: '2024', text: 'A sentence of context.' },
-      { title: 'Scholarship / Honor', meta: '2023', text: 'A sentence of context.' },
+      { title: 'Wharton HS Global Investment Competition Semifinalist', meta: '2024', text: 'Led my team to the top 50 out of 1800 international teams. Developed a custom intrinsic value calculator to evaluate investments.' },
+      { title: 'Congressional App Challenge Third Place & Honorable Mention', meta: '2023, 2025', text: 'Participated every year in high school, developing apps focused on important topics ranging from climate change to mental health' },
+      { title: 'National Merit Semifinalist', meta: '2026', text: 'Recognized in the National Merit Scholarship Program based on PSAT/NMSQT performance.' },
     ],
   },
 ];
