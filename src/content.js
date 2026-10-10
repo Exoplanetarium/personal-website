@@ -40,7 +40,7 @@ export const sections = [
         title: 'Currently',
         meta: '2026',
         text: 'Research in automatic music transcription.',
-        links: [{ label: 'Learn More', href: 'https://github.com/Exoplanetarium/LiveScore' }],
+        links: [{ label: 'Learn More', href: 'https://github.com/Exoplanetarium/LiveScore' }, { label: 'View the Paper', href: 'https://github.com/Exoplanetarium/LiveScore/blob/master/Audio_to_Score.pdf' }],
       },
     ],
   },
