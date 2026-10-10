@@ -47,7 +47,7 @@ export const sections = [
   {
     id: 'music',
     title: 'Music',
-    place: 'Yu Jia Wang is the best pianist imo',
+    place: 'Yuja Wang is the best pianist imo',
     theme: 'music',
     lat: 38,
     lon: 100,
