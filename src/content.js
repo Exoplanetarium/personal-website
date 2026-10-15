@@ -64,8 +64,8 @@ export const sections = [
         marker: 'obelisk',
         pieces: [
           { title: 'Piano Concerto No. 1 in F# minor, Op. 1, Mvt 1: Vivace - Moderato', composer: 'Rachmaninoff', year: 2027 },
-          { title: 'Estampes', composer: 'Debussy', year: 2026 },
-          { title: 'Prelude in B minor, Op. 32 Nos. 10 & 12', composer: 'Rachmaninoff', year: 2026 },
+          { title: 'Estampes', composer: 'Debussy', year: 2026, recording: 'https://drive.google.com/file/d/1j68PeQpJSmrppv_nsWlZZr-BE-n_sL3Q/view?usp=sharing' },
+          { title: 'Prelude in B minor, Op. 32 Nos. 10 & 12', composer: 'Rachmaninoff', year: 2026, recording: 'https://drive.google.com/file/d/1cHJXjwgC5V4bShAYfF5UM8aKlPQZWYwn/view?usp=sharing' },
           { title: 'Piano Sonata No. 17 in D minor (The Tempest), Mvt 1: Largo - Allegro', composer: 'Beethoven', year: 2026, recording: 'https://drive.google.com/file/d/17gLjY9iMLmyYY_9LpG-tgAaYBjpnSuAF/view?usp=sharing' },
           { title: 'Ballade No. 1 in G minor, Op. 23', composer: 'Chopin', year: 2025, recording: 'https://drive.google.com/file/d/1C57iUMpcMu8bBhJPZDcVHW0RG2SYZPqK/view?usp=sharing' },
           { title: 'Etude Op. 25 No. 12 (Winter Wind)', composer: 'Chopin', year: 2024, recording: 'https://drive.google.com/file/d/1ZUKCb0eY8Byl2rsjc0GdLEu75EywDzXW/view?usp=sharing' },
