@@ -10,7 +10,7 @@
 
 export const profile = {
   name: 'David Hadi',
-  tagline: 'Developer · Pianist · A Third Thing',
+  tagline: 'Made by Me',
   links: [
     { label: 'GitHub', href: 'https://github.com/Exoplanetarium' },
     { label: 'Email', href: 'mailto:drhu.contact@gmail.com' },
@@ -108,7 +108,7 @@ export const sections = [
       {
         title: 'Decompute',
         meta: 'ReactJS',
-        text: 'Decentralized computing platform to help combat the use of financially and environmentally expensive data centers.',
+        text: 'Making drug discovery easier and cheaper through the power of decentralized computing',
         links: [{ label: 'Source', href: 'https://github.com/Exoplanetarium/Decompute' }],
       },
       {
@@ -135,8 +135,9 @@ export const sections = [
     size: 0.48,
     intro: 'Awards, honors, and milestones along the climb.',
     items: [
+      { title: "Certificate of Merit Advanced Level", meta: '2022', text: 'Achieved highest level of standardized piano exams in 8th grade' },
       { title: 'Wharton HS Global Investment Competition Semifinalist', meta: '2024', text: 'Led my team to the top 50 out of 1800 international teams. Developed a custom intrinsic value calculator to evaluate investments.' },
-      { title: 'Congressional App Challenge Third Place & Honorable Mention', meta: '2023, 2025', text: 'Participated every year in high school, developing apps focused on important topics ranging from climate change to mental health' },
+      { title: 'Congressional App Challenge Third Place & Honorable Mention', meta: '2023, 2025', text: 'Participated every year in high school, developing apps focused on important topics ranging from climate change to mental health.' },
       { title: 'National Merit Semifinalist', meta: '2026', text: 'Recognized in the National Merit Scholarship Program based on PSAT/NMSQT performance.' },
     ],
   },
